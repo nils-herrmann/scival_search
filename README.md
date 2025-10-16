@@ -1,6 +1,7 @@
 # SciVal Search
-A notebook and utility functions for finding publications in SciVal of the same topic as a given publication, using
-`pybliometrics` and automated `requests` calls with cookie authentication.
+This repo uses `pybliometrics` and automated `requests` calls with cookie authentication to retrieve tables from SciVal. There are currently two notebooks showcasing the functionality:
+- `scival_publication_retrieval.ipynb`: Find publications in SciVal of the same topic as a given publication.
+- `scival_topic_retrieval.ipynb`: Find top related topics for a given topic.
 
 ## Installation
 ### 1. **Clone the repository**:
@@ -30,4 +31,4 @@ COOKIE="your_scival_cookie_here"
 ```
 
 ## Usage
-Open `scival_search.ipynb` and run the cells sequentially
+Open notebooks and run the cells sequentially
