@@ -1,6 +1,6 @@
 # SciVal Search
 This repo uses `pybliometrics` and automated `requests` calls with cookie authentication to retrieve tables from SciVal. There are currently two notebooks showcasing the functionality:
-- `scival_publication_retrieval.ipynb`: Find publications in SciVal of the same topic as a given publication.
+- `scival_search.ipynb`: Find publications in SciVal of the same topic as a given publication.
 - `scival_topic_retrieval.ipynb`: Find top related topics for a given topic.
 
 ## Installation
