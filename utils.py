@@ -1,10 +1,27 @@
 import re
 import requests
+from typing import Literal
 
-BASE_URL = "https://www.scival.com/search/export"
+BASE_URL = "https://www.scival.com"
 
-def get_content(topic_id, cookie, page=1):
+URLS = {
+    "search": f"{BASE_URL}/search/export",
+    "related_topics": f"{BASE_URL}/trends/relatedtopics/export"
+}
+
+BREAK_KEYWORD = {
+    "search": '"Title',
+    "related_topics": '"Topics"'
+}
+
+def get_content(topic_id: str,
+                api: Literal["search", "related_topics"],
+                cookie: str,
+                page=1):
     """Get SciVal content for a specific topic and page."""
+    url = URLS.get(api)
+    if not url:
+        raise ValueError(f"Invalid API type: {api}")
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -18,19 +35,24 @@ def get_content(topic_id, cookie, page=1):
         "currentPage": page
     }
 
-    response = requests.get(BASE_URL, params=params, headers=headers, timeout=30)
+    response = requests.get(url=url, params=params, headers=headers, timeout=30)
     response.raise_for_status()
     assert "attachment" in (response.headers.get("Content-Disposition","").lower())
 
     return response.content.decode("utf-8-sig")
 
 
-def split_lines(text):
+def split_lines(text, api: Literal["search", "related_topics"]):
     """Split SciVal response into intro lines and table text."""
+    # Get keyword to split intro and table
+    break_keyword = BREAK_KEYWORD.get(api, '"Title"')
+    if not break_keyword:
+        raise ValueError(f"Invalid API type: {api}")
+
     lines = text.splitlines()
     start = 0
     for i, line in enumerate(lines):
-        if line.startswith('"Title"'):
+        if line.startswith(break_keyword):
             start = i
             break
 
