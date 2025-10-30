@@ -13,6 +13,7 @@ pybliometrics = {git = "https://github.com/pybliometrics-dev/pybliometrics.git"}
 dotenv = ">=0.9.9,<0.10.0"
 tqdm = ">=4.67.1,<5.0.0"
 platformdirs = "^4.5.0"
+ipywidgets = "^8.1.7"
 
 [tool.poetry.group.notebook.dependencies]
 ipykernel = "^6.30.1"
