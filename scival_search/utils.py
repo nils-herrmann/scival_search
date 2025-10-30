@@ -62,7 +62,7 @@ def split_lines(text, api: Literal["search", "related_topics"]):
     return intro_lines, table_text
 
 
-def parse_scival_info(intro_lines):
+def parse_search_info(intro_lines):
     """Parse introductory lines from SciVal CSV export."""
     info = {}
     for line in intro_lines:
@@ -76,4 +76,17 @@ def parse_scival_info(intro_lines):
             numbers = re.findall(r"\d+", line)
             info["total_publications"] = int(numbers[0])
             info["publications_retrieved"] = int(numbers[1])
+    return info
+
+
+def parse_related_topics_info(intro_lines):
+    """Parse introductory lines from SciVal related topics CSV export."""
+    info = {}
+    for line in intro_lines:
+        if line.startswith("Data set,"):
+            info["data_set"] = re.findall(r'Data set,?""(.*)""', line)[0]
+        elif line.startswith("Entity,"):
+            info["entity"] = re.findall(r'Entity,?"(.*)"', line)[0]
+        elif line.startswith("Year range,"):
+            info["year_range"] = re.findall(r'Year range,?(.*)', line)[0]
     return info
