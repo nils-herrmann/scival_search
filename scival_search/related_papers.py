@@ -7,7 +7,11 @@ from typing import Optional
 import pandas as pd
 from tqdm import tqdm
 
-from scival_search.utils import get_content, parse_search_info, split_lines
+from scival_search.utils import (
+    get_content,
+    parse_search_info,
+    split_lines,
+)
 
 
 class RelatedPapers:
@@ -22,7 +26,7 @@ class RelatedPapers:
         results (pd.DataFrame): DataFrame containing the retrieved papers (alias for data).
     """
     
-    def __init__(self, topic_id: str, cookie: str, show_progress: bool = True):
+    def __init__(self, topic_id: str, cookie: str, show_progress: bool = True, refresh: bool = False):
         """
         Initialize the RelatedPapers instance and automatically fetch papers.
         
@@ -30,6 +34,7 @@ class RelatedPapers:
             topic_id: The SciVal topic ID to retrieve papers for.
             cookie: Authentication cookie for SciVal access.
             show_progress: Whether to show a progress bar during fetching.
+            refresh: Whether to refresh the cache and fetch new data.
         """
         self.topic_id = topic_id
         self.cookie = cookie
@@ -37,15 +42,16 @@ class RelatedPapers:
         self.info: Optional[dict] = None
         
         # Automatically fetch papers on initialization
-        self.results = self.fetch_papers(show_progress=show_progress)
+        self.results = self.fetch_papers(show_progress=show_progress, refresh=refresh)
 
 
-    def fetch_papers(self, show_progress: bool = True) -> pd.DataFrame:
+    def fetch_papers(self, show_progress: bool = True, refresh: bool = False) -> pd.DataFrame:
         """
         Fetch all related papers for the topic ID from SciVal.
         
         Args:
             show_progress: Whether to show a progress bar during fetching.
+            refresh: Whether to refresh the cache and fetch new data.
             
         Returns:
             DataFrame containing all related papers with their metadata.
@@ -53,8 +59,8 @@ class RelatedPapers:
         Raises:
             AssertionError: If the number of retrieved papers doesn't match expected count.
         """
-        # Get first page content
-        res_text = get_content(self.topic_id, api="search", cookie=self.cookie, page=1)
+        # Get first page content (with caching handled by get_content)
+        res_text = get_content(self.topic_id, api="search", cookie=self.cookie, page=1, refresh=refresh)
         
         # Split the response into intro and table data
         intro_lines, table_text = split_lines(res_text, api="search")
@@ -82,7 +88,7 @@ class RelatedPapers:
             iterator = tqdm(pages_to_fetch, desc="Fetching pages") if show_progress else pages_to_fetch
             
             for page in iterator:
-                text = get_content(self.topic_id, api="search", cookie=self.cookie, page=page)
+                text = get_content(self.topic_id, api="search", cookie=self.cookie, page=page, refresh=refresh)
                 
                 _, page_table_text = split_lines(text, api="search")
                 # Exclude header and last two summary lines

@@ -12,6 +12,7 @@ pandas = ">=2.3.2,<3.0.0"
 pybliometrics = {git = "https://github.com/pybliometrics-dev/pybliometrics.git"}
 dotenv = ">=0.9.9,<0.10.0"
 tqdm = ">=4.67.1,<5.0.0"
+platformdirs = "^4.5.0"
 
 [tool.poetry.group.notebook.dependencies]
 ipykernel = "^6.30.1"

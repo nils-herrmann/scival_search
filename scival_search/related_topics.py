@@ -5,7 +5,11 @@ from typing import Optional
 
 import pandas as pd
 
-from scival_search.utils import get_content, parse_related_topics_info, split_lines
+from scival_search.utils import (
+    get_content,
+    parse_related_topics_info,
+    split_lines,
+)
 
 
 class RelatedTopics:
@@ -20,7 +24,7 @@ class RelatedTopics:
         results (pd.DataFrame): DataFrame containing the retrieved topics (alias for data).
     """
     
-    def __init__(self, topic_id: str, cookie: str, show_progress: bool = True):
+    def __init__(self, topic_id: str, cookie: str, show_progress: bool = True, refresh: bool = False):
         """
         Initialize the RelatedTopics instance and automatically fetch related topics.
         
@@ -28,6 +32,7 @@ class RelatedTopics:
             topic_id: The SciVal topic ID to retrieve related topics for.
             cookie: Authentication cookie for SciVal access.
             show_progress: Whether to show progress information during fetching.
+            refresh: Whether to refresh the cache and fetch new data.
         """
         self.topic_id = topic_id
         self.cookie = cookie
@@ -35,14 +40,15 @@ class RelatedTopics:
         self.info: Optional[dict] = None
         
         # Automatically fetch related topics on initialization
-        self.results = self.fetch_topics(show_progress=show_progress)
+        self.results = self.fetch_topics(show_progress=show_progress, refresh=refresh)
 
-    def fetch_topics(self, show_progress: bool = True) -> pd.DataFrame:
+    def fetch_topics(self, show_progress: bool = True, refresh: bool = False) -> pd.DataFrame:
         """
         Fetch all related topics for the topic ID from SciVal.
         
         Args:
             show_progress: Whether to show progress information during fetching.
+            refresh: Whether to refresh the cache and fetch new data.
             
         Returns:
             DataFrame containing all related topics with their metadata.
@@ -50,8 +56,9 @@ class RelatedTopics:
         Raises:
             AssertionError: If the number of retrieved topics doesn't match expected count.
         """
-        # Get content from SciVal (related topics are always on one page - 50 topics)
-        res_text = get_content(self.topic_id, api="related_topics", cookie=self.cookie, page=1)
+        # Get content from SciVal (with caching handled by get_content)
+        # Related topics are always on one page - 50 topics
+        res_text = get_content(self.topic_id, api="related_topics", cookie=self.cookie, page=1, refresh=refresh)
         
         # Split the response into intro and table data
         intro_lines, table_text = split_lines(res_text, api="related_topics")
