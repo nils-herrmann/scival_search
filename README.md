@@ -11,6 +11,7 @@ This repo uses `pybliometrics` and automated `requests` calls with cookie authen
    ```
 
 ### 2. **Install dependencies**:
+If not executed in a venv, poetry will automatically create and manage a virtual environment for you:
    ```bash
    poetry install
    ```
