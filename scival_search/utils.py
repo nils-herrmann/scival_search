@@ -5,6 +5,8 @@ from pathlib import Path
 
 from platformdirs import user_cache_dir
 from typing import Literal, Optional
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 
 BASE_PATH = Path(user_cache_dir('scival_search'))
@@ -21,11 +23,30 @@ BREAK_KEYWORD = {
     "related_topics": '"Topics"'
 }
 
+# Create a session with retry strategy
+def create_session():
+    """Create a requests session with retry strategy."""
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=3,  # Total number of retries
+        backoff_factor=1,  # Wait 1s, 2s, 4s between retries
+        status_forcelist=[429, 500, 502, 503, 504],  # Retry on these status codes
+        allowed_methods=["GET"]  # Only retry GET requests
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+# Global session instance
+_session = create_session()
+
 def get_content(topic_id: str,
                 api: Literal["search", "related_topics"],
                 cookie: str,
                 page=1,
-                refresh: bool = False):
+                refresh: bool = False,
+                cache: bool = True):
     """Get SciVal content for a specific topic and page.
     
     Args:
@@ -34,12 +55,13 @@ def get_content(topic_id: str,
         cookie: Authentication cookie for SciVal access
         page: Page number (default: 1)
         refresh: Whether to refresh the cache and fetch new data (default: False)
+        cache: Whether to save newly fetched data to cache (default: True)
         
     Returns:
         Content string from cache or freshly fetched from SciVal
     """
-    # Check cache first if not refreshing
-    if not refresh:
+    # Check cache first if not refreshing and caching is enabled
+    if cache and not refresh:
         cached_content = load_content_cache(api, topic_id, page)
         if cached_content is not None:
             return cached_content
@@ -61,14 +83,15 @@ def get_content(topic_id: str,
         "currentPage": page
     }
 
-    response = requests.get(url=url, params=params, headers=headers, timeout=30)
+    response = _session.get(url=url, params=params, headers=headers, timeout=30)
     response.raise_for_status()
     assert "attachment" in (response.headers.get("Content-Disposition","").lower())
 
     content = response.content.decode("utf-8-sig")
     
-    # Save to cache
-    save_content_cache(api, topic_id, page, content)
+    # Save to cache if caching is enabled
+    if cache:
+        save_content_cache(api, topic_id, page, content)
     
     return content
 

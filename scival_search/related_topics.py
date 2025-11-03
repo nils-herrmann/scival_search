@@ -24,7 +24,7 @@ class RelatedTopics:
         results (pd.DataFrame): DataFrame containing the retrieved topics (alias for data).
     """
     
-    def __init__(self, topic_id: str, cookie: str, show_progress: bool = True, refresh: bool = False):
+    def __init__(self, topic_id: str, cookie: str, show_progress: bool = True, refresh: bool = False, cache: bool = True):
         """
         Initialize the RelatedTopics instance and automatically fetch related topics.
         
@@ -33,6 +33,7 @@ class RelatedTopics:
             cookie: Authentication cookie for SciVal access.
             show_progress: Whether to show progress information during fetching.
             refresh: Whether to refresh the cache and fetch new data.
+            cache: Whether to save newly fetched data to cache.
         """
         self.topic_id = topic_id
         self.cookie = cookie
@@ -40,15 +41,16 @@ class RelatedTopics:
         self.info: Optional[dict] = None
         
         # Automatically fetch related topics on initialization
-        self.results = self.fetch_topics(show_progress=show_progress, refresh=refresh)
+        self.results = self.fetch_topics(show_progress=show_progress, refresh=refresh, cache=cache)
 
-    def fetch_topics(self, show_progress: bool = True, refresh: bool = False) -> pd.DataFrame:
+    def fetch_topics(self, show_progress: bool = True, refresh: bool = False, cache: bool = True) -> pd.DataFrame:
         """
         Fetch all related topics for the topic ID from SciVal.
         
         Args:
             show_progress: Whether to show progress information during fetching.
             refresh: Whether to refresh the cache and fetch new data.
+            cache: Whether to save newly fetched data to cache.
             
         Returns:
             DataFrame containing all related topics with their metadata.
@@ -58,7 +60,7 @@ class RelatedTopics:
         """
         # Get content from SciVal (with caching handled by get_content)
         # Related topics are always on one page - 50 topics
-        res_text = get_content(self.topic_id, api="related_topics", cookie=self.cookie, page=1, refresh=refresh)
+        res_text = get_content(self.topic_id, api="related_topics", cookie=self.cookie, page=1, refresh=refresh, cache=cache)
         
         # Split the response into intro and table data
         intro_lines, table_text = split_lines(res_text, api="related_topics")
