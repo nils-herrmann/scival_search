@@ -1,13 +1,12 @@
 # SciVal Search
 
-A Python package to retrieve and analyze data from SciVal using `pybliometrics` and automated `requests` calls with cookie authentication.
+A Python package to retrieve and analyze data from SciVal with automated API calls and intelligent caching.
 
 ## Features
 
 - **RelatedPapers**: Retrieve all publications related to a specific SciVal topic
-- **Topic Retrieval**: Find top related topics for a given topic
-- **DataFrame Output**: Get results as pandas DataFrames for easy analysis
-- **Progress Tracking**: Built-in progress bars for long-running queries
+- **RelatedTopics**: Get the top 50 related topics for any given topic
+- **Smart Caching**: Automatic caching of API responses for faster subsequent access
 
 ## Installation
 
@@ -41,79 +40,134 @@ COOKIE="your_scival_cookie_here"
 
 ## Usage
 
-### Using the RelatedPapers Class
+### Quick Example
 
 ```python
-import os
-from dotenv import load_dotenv
-from pybliometrics.scival import PublicationLookup, init
+from dotenv import dotenv_values
+from scival_search import RelatedPapers, RelatedTopics
+
+# Load your SciVal cookie from environment
+env_vars = dotenv_values()
+COOKIE = env_vars['COOKIE']
+
+# Example topic ID
+topic_id = "12345"
+
+# Get related papers for a topic
+papers = RelatedPapers(topic_id, cookie=COOKIE)
+print(f"Found {len(papers.results)} papers")
+print(papers.results.head())
+
+# Get related topics
+topics = RelatedTopics(topic_id, cookie=COOKIE)
+print(f"Found {len(topics.results)} related topics")
+print(topics.results.head())
+```
+
+### RelatedPapers - Detailed Usage
+
+```python
 from scival_search import RelatedPapers
 
-# Load environment and initialize pybliometrics
-load_dotenv()
-init()
-COOKIE = os.getenv('COOKIE')
+# Fetch papers with progress display
+papers = RelatedPapers(
+    topic_id="12345",
+    cookie=COOKIE,
+    show_progress=True,  # Show progress bar
+    refresh=False,       # Refresh cache
+    cache=True           # Save to cache
+)
 
-# Get topic ID for a publication
-pl = PublicationLookup('85068268027')  # Example: pybliometrics paper
-topic_id = pl.topic_id
-
-# Create RelatedPapers instance and fetch data
-rp = RelatedPapers(topic_id=topic_id, cookie=COOKIE)
-df = rp.fetch_papers()
-
-# Access the data
+# Access the results
+df = papers.results  # or papers.data
 print(f"Retrieved {len(df)} papers")
+
+# Access metadata
+print(f"Year range: {papers.info['start_year']} - {papers.info['end_year']}")
+print(f"Total publications: {papers.info['total_publications']}")
+```
+
+### RelatedTopics - Detailed Usage
+
+```python
+from scival_search import RelatedTopics
+
+# Fetch related topics
+topics = RelatedTopics(
+    topic_id="12345",
+    cookie=COOKIE,
+    show_progress=True,
+    refresh=False,
+    cache=True
+)
+
+# Access the results (always 50 topics)
+df = topics.results  # or topics.data
 print(df.head())
 
-# Get metadata
-metadata = rp.get_info()
-print(f"Year range: {metadata['start_year']} - {metadata['end_year']}")
+# Access metadata
+print(f"Entity: {topics.info['entity']}")
+print(f"Year range: {topics.info['year_range']}")
 ```
 
-### Using Notebooks
+### Caching Behavior
 
-There are example notebooks showcasing the functionality:
-- `scival_search/scival_search.ipynb`: Find publications in SciVal of the same topic as a given publication
-- `scival_search/scival_topic_retrieval.ipynb`: Find top related topics for a given topic
+```python
+# First call - fetches from SciVal and caches
+papers = RelatedPapers(topic_id, cookie=COOKIE)
 
-To use the notebooks:
-```bash
-poetry run jupyter lab
-```
+# Second call - loads from cache (much faster!)
+papers = RelatedPapers(topic_id, cookie=COOKIE)
 
-### Examples
+# Force refresh - ignores cache and fetches fresh data
+papers = RelatedPapers(topic_id, cookie=COOKIE, refresh=True)
 
-Check the `examples/` directory for more usage examples:
-```bash
-poetry run python examples/related_papers_example.py
+# Fetch without caching
+papers = RelatedPapers(topic_id, cookie=COOKIE, cache=False)
 ```
 
 ## API Reference
 
-### RelatedPapers Class
+### RelatedPapers
 
-#### `__init__(topic_id: str, cookie: str)`
-Initialize a RelatedPapers instance.
-
-**Parameters:**
-- `topic_id`: The SciVal topic ID to retrieve papers for
-- `cookie`: Authentication cookie for SciVal access
-
-#### `fetch_papers(show_progress: bool = True) -> pd.DataFrame`
-Fetch all related papers for the topic ID from SciVal.
+Retrieve all publications related to a SciVal topic.
 
 **Parameters:**
-- `show_progress`: Whether to show a progress bar during fetching
+- `topic_id` (str): The SciVal topic ID
+- `cookie` (str): Authentication cookie for SciVal
+- `show_progress` (bool, optional): Show progress bar. Default: `True`
+- `refresh` (bool, optional): Refresh cache and fetch new data. Default: `False`
+- `cache` (bool, optional): Save fetched data to cache. Default: `True`
 
-**Returns:**
-- DataFrame containing all related papers with their metadata
+**Attributes:**
+- `results`: DataFrame of retrieved papers (alias for `data`)
+- `data`: DataFrame of retrieved papers
+- `info`: Dictionary with metadata (year range, total publications, etc.)
 
-#### `get_data() -> pd.DataFrame`
-Get the DataFrame of related papers. If not yet fetched, calls `fetch_papers()` first.
+### RelatedTopics
 
-#### `get_info() -> dict`
-Get metadata about the dataset (year range, total publications, etc.).
+Retrieve the top 50 related topics for a SciVal topic.
+
+**Parameters:**
+- `topic_id` (str): The SciVal topic ID
+- `cookie` (str): Authentication cookie for SciVal
+- `show_progress` (bool, optional): Show progress info. Default: `True`
+- `refresh` (bool, optional): Refresh cache and fetch new data. Default: `False`
+- `cache` (bool, optional): Save fetched data to cache. Default: `True`
+
+**Attributes:**
+- `results`: DataFrame of 50 related topics (alias for `data`)
+- `data`: DataFrame of 50 related topics
+- `info`: Dictionary with metadata (entity, year range, etc.)
+
+## Cache Location
+
+Cached data is stored in your system's cache directory:
+- **macOS**: `~/Library/Caches/scival_search/`
+- **Linux**: `~/.cache/scival_search/`
+- **Windows**: `%LOCALAPPDATA%\scival_search\Cache\`
+
+Each API call is cached separately by topic ID and page number.
 
 ## License
 
